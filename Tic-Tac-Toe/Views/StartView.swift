@@ -10,6 +10,7 @@ import SwiftUI
 struct StartView: View {
     
     // MARK: - Properties
+    @EnvironmentObject var game: GameService
     @State private var gameType: GameType = .undetermined
     @State private var playerName: String = ""
     @State private var opponentName: String = ""
@@ -60,6 +61,7 @@ struct StartView: View {
             // MARK: - Buttons condition
             if gameType != .peer {
                 Button("Start Game") {
+                    game.setupGame(gameType: gameType, player1Name: playerName, player2Name: opponentName)
                     focus = false
                     startGame = true
                 }
@@ -85,5 +87,6 @@ struct StartView: View {
 struct StartView_Previews: PreviewProvider {
     static var previews: some View {
         StartView()
+            .environmentObject(GameService())
     }
 }

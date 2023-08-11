@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct AppEntry: App {
+    // MARK: - Properties
+    @StateObject var game = GameService()
     var body: some Scene {
         WindowGroup {
             StartView()
+                .environmentObject(game)
         }
     }
 }
