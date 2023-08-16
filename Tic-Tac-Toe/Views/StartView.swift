@@ -12,10 +12,15 @@ struct StartView: View {
     // MARK: - Properties
     @EnvironmentObject var game: GameService
     @State private var gameType: GameType = .undetermined
-    @State private var playerName: String = ""
+    @AppStorage("yourName") var yourName: String = ""
     @State private var opponentName: String = ""
     @State private var startGame: Bool = false
     @FocusState private var focus: Bool
+    @State private var changeName:Bool = false
+    @State private var newName: String = ""
+    init(yourName: String) {
+        self.yourName = yourName
+    }
     
     
     var body: some View {
@@ -39,14 +44,11 @@ struct StartView: View {
                 switch gameType {
                     case .single:
                         VStack {
-                            TextField("Player name", text: $playerName)
-                                .autocorrectionDisabled()
                             TextField("Opponent name", text: $opponentName)
                                 .autocorrectionDisabled()
                         }
                     case .bot:
-                        TextField("Player name", text: $playerName)
-                            .autocorrectionDisabled()
+                        EmptyView()
                     case .peer:
                         EmptyView()
                     case .undetermined:
@@ -61,17 +63,23 @@ struct StartView: View {
             // MARK: - Buttons condition
             if gameType != .peer {
                 Button("Start Game") {
-                    game.setupGame(gameType: gameType, player1Name: playerName, player2Name: opponentName)
+                    game.setupGame(gameType: gameType, player1Name: yourName, player2Name: opponentName)
                     focus = false
                     startGame = true
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(gameType == .undetermined || gameType == .bot && playerName.isEmpty || gameType == .single && (playerName.isEmpty || opponentName.isEmpty))
+                .disabled(gameType == .undetermined || gameType == .single && opponentName.isEmpty)
                 
             Image("Launchscreen")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 300)
+                
+            Text("Your name is \(yourName)")
+                Button("Change name") {
+                    changeName.toggle()
+                }
+                .buttonStyle(.bordered)
             }
             Spacer()
         }
@@ -80,13 +88,23 @@ struct StartView: View {
         .fullScreenCover(isPresented: $startGame) {
             GameView()
         }
+        .alert("Change Name", isPresented: $changeName, actions: {
+            TextField("Change your name", text: $newName)
+            Button("OK", role: .destructive) {
+                yourName = newName
+                exit(-1)
+            }
+            Button("Cancel", role: .cancel) {}
+        }, message: {
+            Text("Tap OK, relaunched the app and use the new name")
+        })
         .inNavigationStack()
     }
 }
 
 struct StartView_Previews: PreviewProvider {
     static var previews: some View {
-        StartView()
+        StartView(yourName: "Sample")
             .environmentObject(GameService())
     }
 }
