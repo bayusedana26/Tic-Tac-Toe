@@ -10,6 +10,7 @@ import SwiftUI
 struct GameView: View {
     // MARK: - Properties
     @EnvironmentObject var game: GameService
+    @EnvironmentObject var connectionManager: MPConnectionManager
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -20,11 +21,21 @@ struct GameView: View {
             HStack {
                 Button(game.player1.name) {
                     game.player1.isCurrent = true
+                    
+                    if game.gameType == .peer {
+                        let gameMove = MPGameMove(action: .start, playerName: game.player1.name, index: nil)
+                        connectionManager.send(gameMove: gameMove)
+                    }
                 }
                 .buttonStyle(PlayerButtonStyle(isCurrent: game.player1.isCurrent))
                 
                 Button(game.player2.name) {
                     game.player2.isCurrent = true
+                    
+                    if game.gameType == .peer {
+                        let gameMove = MPGameMove(action: .start, playerName: game.player2.name, index: nil)
+                        connectionManager.send(gameMove: gameMove)
+                    }
                     
                     if game.gameType == .bot {
                         Task {
@@ -64,7 +75,9 @@ struct GameView: View {
                 }
             }
             
-            .disabled(game.boardDisabled)
+            .disabled(game.boardDisabled ||
+                      game.gameType == .peer &&
+                      connectionManager.myPeerId.displayName != game.currentPlayer.name)
             
             VStack {
                 if game.gameOver {
@@ -76,6 +89,10 @@ struct GameView: View {
                     }
                     Button("New Game") {
                         game.reset()
+                        if game.gameType == .peer {
+                            let gameMove = MPGameMove(action: .reset, playerName: nil, index: nil)
+                            connectionManager.send(gameMove: gameMove)
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -88,6 +105,10 @@ struct GameView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("End Game") {
                     dismiss()
+                    if game.gameType == .peer {
+                        let gameMove = MPGameMove(action: .end, playerName: nil, index: nil)
+                        connectionManager.send(gameMove: gameMove)
+                    }
                 }
                 .buttonStyle(.bordered)
             }
@@ -95,6 +116,9 @@ struct GameView: View {
         .navigationTitle("Game On")
         .onAppear {
             game.reset()
+            if game.gameType == .peer {
+                connectionManager.setup(game: game)
+            }
         }
         .inNavigationStack()
     }
@@ -104,6 +128,7 @@ struct GameView_Previews: PreviewProvider {
     static var previews: some View {
         GameView()
             .environmentObject(GameService())
+            .environmentObject(MPConnectionManager(yourName: "Sample"))
     }
 }
 

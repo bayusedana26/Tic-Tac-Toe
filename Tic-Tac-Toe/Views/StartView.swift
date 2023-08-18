@@ -11,15 +11,17 @@ struct StartView: View {
     
     // MARK: - Properties
     @EnvironmentObject var game: GameService
+    @StateObject var connectionManager: MPConnectionManager
     @State private var gameType: GameType = .undetermined
     @AppStorage("yourName") var yourName: String = ""
     @State private var opponentName: String = ""
-    @State private var startGame: Bool = false
     @FocusState private var focus: Bool
     @State private var changeName:Bool = false
+    @State private var startGame: Bool = false
     @State private var newName: String = ""
     init(yourName: String) {
         self.yourName = yourName
+        _connectionManager = StateObject(wrappedValue: MPConnectionManager(yourName: yourName))
     }
     
     
@@ -50,7 +52,8 @@ struct StartView: View {
                     case .bot:
                         EmptyView()
                     case .peer:
-                        EmptyView()
+                        MPPeersView()
+                            .environmentObject(connectionManager)
                     case .undetermined:
                         EmptyView()
                 }
@@ -72,6 +75,7 @@ struct StartView: View {
                 
             Image("Launchscreen")
                 .resizable()
+                .scaledToFit()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 300)
                 
@@ -87,6 +91,7 @@ struct StartView: View {
         .navigationTitle("Tic Tac Toe")
         .fullScreenCover(isPresented: $startGame) {
             GameView()
+                .environmentObject(connectionManager)
         }
         .alert("Change Name", isPresented: $changeName, actions: {
             TextField("Change your name", text: $newName)
